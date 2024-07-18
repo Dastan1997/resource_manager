@@ -7,13 +7,12 @@ from app import util
 
 class JobExecutor:
     def __init__(self, resources):
-        self.resources = resources
+        self.resources = util.convert_resource(resources)
         self.docker_client = aiodocker.Docker()
         self.volume_name = util.get_random_str()
         self.container_name = util.get_random_str()
 
     async def setup_docker_volume(self):
-        storage = util.convert_storage(self.resources.storage)
         try:
             await self.docker_client.volumes.create({
                 'Name': self.volume_name,
@@ -21,7 +20,7 @@ class JobExecutor:
                 'DriverOpts': {
                     'type': 'tmpfs',
                     'device': 'tmpfs',
-                    'o': f'size={storage}'
+                    'o': f'size={self.resources.storage}'
                 }
             })
             logging.info("docker volume has been setup successfully.")
@@ -41,8 +40,8 @@ class JobExecutor:
             'Image': 'python:3.9-slim',
             'Cmd': ['python', '-c', code],
             'HostConfig': {
-                'NanoCPUs': self.resources.cpu * 1000000000,
-                'Memory': util.get_ram_space(self.resources.ram),
+                'NanoCPUs': self.resources.cpu,
+                'Memory': self.resources.ram,
                 'DeviceRequests': [
                     {
                         'Driver': 'nvidia',

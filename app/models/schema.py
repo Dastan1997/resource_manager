@@ -10,7 +10,7 @@ class Resources(BaseModel):
 
 
 class JobRequest(BaseModel):
-    job_type: str
+    task_type: str
     code: str
     resources: Resources
 

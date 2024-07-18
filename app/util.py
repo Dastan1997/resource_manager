@@ -2,6 +2,15 @@ import hashlib
 import datetime
 import asyncio
 import logging
+from app.models.schema import Resources
+
+
+def convert_resource(resource: Resources):
+    resource.cpu = int(resource.cpu) * 1000000000
+    resource.gpu = int(resource.gpu)
+    resource.ram = get_ram_space(resource.ram)
+    resource.storage = convert_storage(resource.storage)
+    return resource.copy()
 
 
 def get_ram_space(ram: str) -> int:
