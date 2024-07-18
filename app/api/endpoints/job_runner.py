@@ -1,14 +1,13 @@
-from fastapi import Depends, APIRouter
-from typing_extensions import Annotated
+from fastapi import APIRouter
 
-from app.models.schemas import TaskRequest, TaskResponse
-from app.service.task_executor import TaskExecutor
-from app.api.deps import get_task_executor
+from app.models.schema import JobRequest, JobResponse
+from app.services.job_executor import JobExecutor
 
 router = APIRouter()
 
 
-@router.post("/execute_task", response_model=TaskResponse)
-async def execute_task(task: TaskRequest, task_executor: Annotated[TaskExecutor, Depends(get_task_executor)]):
-    result = await task_executor.execute(task)
-    return TaskResponse(status="success", output=result)
+@router.post("/job", response_model=JobResponse)
+async def execute_task(job: JobRequest):
+    result = await JobExecutor.factory(resources=job.resources) \
+        .execute(job.code)
+    return JobResponse(status="success", output=result)
