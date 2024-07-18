@@ -5,7 +5,7 @@ from pydantic import Field
 class Resources(BaseModel):
     cpu: str = Field(pattern=r"^[0-9]+$")
     gpu: str = Field(pattern=r"^[0-9]+$")
-    ram: str = Field(pattern=r"^[0-9]+MB$")
+    ram: str = Field(pattern=r"^[0-9]+(MB|GB)$")
     storage: str = Field(pattern=r"^[0-9]+GB$")
 
 
