@@ -1,13 +1,12 @@
 from pydantic import BaseModel
 from pydantic import Field
-from app.config import settings
 
 
 class Resources(BaseModel):
-    cpu: str
-    gpu: str
-    ram: str
-    storage: str
+    cpu: str = Field(pattern=r"^[0-9]+$")
+    gpu: str = Field(pattern=r"^[0-9]+$")
+    ram: str = Field(pattern=r"^[0-9]+MB$")
+    storage: str = Field(pattern=r"^[0-9]+GB$")
 
 
 class JobRequest(BaseModel):

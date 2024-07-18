@@ -1,6 +1,4 @@
-import asyncio
 import logging
-
 import aiodocker
 
 from fastapi import HTTPException
@@ -59,9 +57,13 @@ class JobExecutor:
         }
 
         logging.info("setting up container")
-        container = await self.docker_client.containers.create_or_replace(
-            name=self.container_name, config=config
-        )
+        try:
+            container = await self.docker_client.containers.create_or_replace(
+                name=self.container_name, config=config
+            )
+        except Exception as err:
+            logging.info(f"error happens while creating the container {err}")
+            raise HTTPException(status_code=400, detail=f"Error creating container:")
         return container
 
     async def execute(self, code: str):
@@ -77,6 +79,8 @@ class JobExecutor:
 
         await container.stop()
         await container.delete()
+
+        logging.info("volume is being deleted")
         await self.volume_delete()
         return ''.join(logs)
 
