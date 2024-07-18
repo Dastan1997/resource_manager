@@ -1,15 +1,35 @@
 import asyncio
+import logging
+
 import aiodocker
 
-from app.models.schema import JobRequest
+from fastapi import HTTPException
+from app import util
 
 
 class JobExecutor:
     def __init__(self, resources):
         self.resources = resources
         self.docker_client = aiodocker.Docker()
-    def setup_docker_volume(self):
-        pass
+        self.volume_name = util.get_random_str()
+        self.container_name = util.get_random_str()
+
+    async def setup_docker_volume(self):
+        storage = util.convert_storage(self.resources.storage)
+        try:
+            await self.docker_client.volumes.create({
+                'Name': self.volume_name,
+                'Driver': 'local',
+                'DriverOpts': {
+                    'type': 'tmpfs',
+                    'device': 'tmpfs',
+                    'o': f'size={storage}'
+                }
+            })
+            logging.info("docker volume has been setup successfully.")
+        except aiodocker.exceptions.DockerError as e:
+            raise HTTPException(status_code=400, detail=f"Error creating volume: {e}")
+
     def setup_docker_container(self):
         pass
 
