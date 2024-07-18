@@ -30,21 +30,56 @@ class JobExecutor:
         except aiodocker.exceptions.DockerError as e:
             raise HTTPException(status_code=400, detail=f"Error creating volume: {e}")
 
-    def setup_docker_container(self):
-        pass
+    async def volume_delete(self):
+        try:
+            await util.run_command(f"docker volume rm {self.volume_name}")
+        except Exception as err:
+            logging.info(f"error happens while deleting docker volume {err}")
+        finally:
+            pass
+
+    async def setup_container_with_code(self, code):
+        config = {
+            'Image': 'python:3.9-slim',
+            'Cmd': ['python', '-c', code],
+            'HostConfig': {
+                'NanoCPUs': self.resources.cpu * 1000000000,
+                'Memory': util.get_ram_space(self.resources.ram),
+                'DeviceRequests': [
+                    {
+                        'Driver': 'nvidia',
+                        'Count': self.resources.gpu,
+                        'Capabilities': [['gpu']]
+                    }
+                ] if self.resources.gpu > 0 else [],
+                'Binds': [
+                    f'{self.volume_name}:/mnt/volume'
+                ]
+            }
+        }
+
+        logging.info("setting up container")
+        container = await self.docker_client.containers.create_or_replace(
+            name=self.container_name, config=config
+        )
+        return container
+
+    async def execute(self, code: str):
+        logging.info("volume is being created")
+        await self.setup_docker_volume()
+
+        logging.info("container is being created")
+        container = await self.setup_container_with_code(code)
+        await container.start()
+        await container.wait()
+
+        logs = await container.log(stdout=True, stderr=True)
+
+        await container.stop()
+        await container.delete()
+        await self.volume_delete()
+        return ''.join(logs)
 
     @classmethod
     def factory(cls, resources):
         return cls(resources=resources)
-
-    async def execute(self, code: str) -> str:
-        """
-        execute task inside docker container with resources specified in task.
-        :param task:
-        :return:
-        """
-        try:
-            result = await execute_job(task.resources)
-            return result
-        except asyncio.TimeoutError:
-            raise HTTPException(status_code=504, detail='timeout')

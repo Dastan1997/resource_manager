@@ -31,5 +31,5 @@ async def run_command(cmd):
 
 
 def get_random_str():
-    hashlib.sha1().update(str(datetime.datetime.now()).encode("utf-8"))
+    hashlib.sha1().update(str(datetime.datetime.now().timestamp()).encode("utf-8"))
     return hashlib.sha1().hexdigest()[:20]
